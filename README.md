@@ -1,75 +1,78 @@
-# Example of Emits and Props in Vue
+## Vue 3: estructura i reactivitat
 
-Exemple Tema 4 Unitat 2 UOC JavaScript C1
+**Vue 3** permet construir la interfície del formulari i mantenir-la sincronitzada amb les dades.
 
-1. Defineix les propietats i els valors per defecte
+El component es divideix en tres parts:
 
-const props = withDefaults(defineProps<CounterProps>(), {
-initial: 0,
-step: 1,
+- **`<script setup lang="ts">`**: conté la lògica del formulari amb TypeScript. Les variables declarades aquí es poden utilitzar directament al template.
+- **`<template>`**: defineix els camps, les etiquetes, els missatges d’error i el botó d’enviament.
+- **`<style scoped lang="scss">`**: defineix estils SCSS que s’apliquen només a aquest component.
+
+Al template s’utilitzen diferents directives de Vue:
+
+```html
+<input v-model="name" v-bind="nameAtrrs" />
+<p v-if="errors.name">{{ errors.name }}</p>
+```
+
+- **`v-model`** sincronitza el valor de l’input amb la variable `name`.
+- **`v-bind`** aplica els atributs i els gestors d’esdeveniments que proporciona VeeValidate.
+- **`v-if`** mostra el missatge només quan existeix un error.
+- **`{{ ... }}`** mostra el valor d’una variable a la pantalla.
+- **`:class`** afegeix classes dinàmicament, per exemple per ressaltar un camp incorrecte.
+- **`@submit.prevent`** captura l’enviament i evita que el navegador recarregui la pàgina.
+
+Gràcies a la reactivitat de Vue, els missatges i els estils s’actualitzen quan canvia l’estat de validació.
+
+## Yup: regles de validació
+
+**Yup** defineix quines condicions han de complir les dades. Les regles s’agrupen en un esquema:
+
+```ts
+const schema = yup.object({
+  name: yup.string().required().min(2).max(50),
+  email: yup.string().required().email(),
+  password: yup.string().required().min(8),
 });
+```
 
-- defineProps<CounterProps>() defineix les propietats que pot rebre el component, segons el tipus CounterProps.
-- withDefaults() estableix els valors per defecte: initial serà 0 i step serà 1 si no es passen.
+Cada propietat correspon a un camp del formulari. Els mètodes s’encadenen per combinar regles:
 
-2. Defineix l’esdeveniment que pot emetre
+- **`string()`**, **`number()`** i **`date()`** defineixen el tipus de dada esperat. Yup també pot intentar convertir el valor rebut a aquest tipus.
+- **`required()`** indica que el camp és obligatori.
+- **`min()` i `max()`** limiten la longitud d’un text, el valor d’un número o una data.
+- **`email()`** comprova el format del correu electrònic.
+- **`typeError()`** personalitza el missatge quan el valor no es pot interpretar amb el tipus esperat.
 
-const emit = defineEmits<{
-(e: 'update', value: number): void;
-}>();
+Per comprovar que les contrasenyes coincideixen, es referencia un altre camp:
 
-Declara un esdeveniment anomenat update que envia un valor de tipus number.
+```ts
+confirm: yup
+    .string()
+    .oneOf([yup.ref('password')], 'Las contraseñas no coinciden')
+    .required(),
+```
 
-La signatura indica:
+**`yup.ref('password')`** obté el valor del camp `password`, i **`oneOf()`** exigeix que la confirmació coincideixi amb aquest valor.
 
-- e: 'update': el nom de l’esdeveniment.
-- value: number: la dada que s’envia.
-- void: la crida no retorna cap valor.
+## VeeValidate: connexió entre Vue i Yup
 
-Per exemple:
-emit('update', 5);
+**VeeValidate** connecta els camps de Vue amb l’esquema de Yup i gestiona l’estat del formulari:
 
-3. Crea l’estat del comptador
+```ts
+const { values, errors, meta, defineField } = useForm({
+  validationSchema: schema,
+  initialValues,
+});
+```
 
-const count = ref<number>(props.initial);
+- **`values`** conté els valors actuals dels camps.
+- **`errors`** conté els missatges de validació.
+- **`meta`** conté informació global, com si el formulari és vàlid o s’ha modificat.
+- **`defineField()`** crea el model reactiu i els atributs necessaris per connectar cada input.
 
-Crea una referència reactiva numèrica amb el valor inicial rebut.
+```ts
+const [name, nameAtrrs] = defineField('name');
+```
 
-Es copia el valor inicial: si després el pare modifica props.initial, count no s’actualitza automàticament.
-
-4. Defineix les operacions
-
-const increment = () => {
-count.value += props.step;
-};
-
-const decrement = () => {
-count.value -= props.step;
-};
-
-Incrementen o redueixen el comptador segons step. Per exemple, si step és 2, sumaràs o restaràs de dos en dos.
-
-En el codi TypeScript accedeixes al valor del ref amb .value.
-
-5. Avisa el pare quan canvia el comptador
-
-watch(count, (v) => emit('update', v));
-
-Observa count. Quan canvia, rep el nou valor a v i emet l’esdeveniment update amb aquest valor.
-
-El pare el pot escoltar així:
-
-<CounterComponent :initial="14" @update="last = $event" />
-
-La variable last rep el valor enviat pel fill amb emit('update', v). Al template del pare, aquest valor és accessible mitjançant $event.
-
-const last = ref(0);
-
-Aquest watch no emet el valor inicial en crear-se; s’executa quan detecta un canvi.
-
-6. Utilitza un composable per obtenir càlculs
-   const { square, factorial } = useCounterMath(count);
-
-Crida useCounterMath passant-li la referència reactiva count i extreu les propietats square i factorial del resultat amb desestructuració.
-
-Pels noms, probablement representen el quadrat i el factorial del comptador. Cal veure la implementació de useCounterMath per confirmar com es calculen i si s’actualitzen reactivament.
+En aquest exemple, Vue gestiona la interfície, Yup defineix les regles i VeeValidate coordina la validació i els errors.
