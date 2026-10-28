@@ -1,18 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import CounterComponent from '@/components/CounterComponent.vue';
-
-const last = ref(0);
+// import PrimerFormulario from './components/PrimerFormulario.vue';
+import RegistroFormulario from './components/RegistroFormulario.vue';
 </script>
 
 <template>
-    <main class="container">
-        <h1 v-once>Comunicación entre componentes</h1>
-        <CounterComponent @update="last = $event" />
-        <CounterComponent :initial="5" :step="2" @update="last = $event" />
-        <CounterComponent :initial="14" @update="last = $event" />
-        <p>Último valor recibido: {{ last }}</p>
+    <main>
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h1 class="mb-4">Componente principal de la App</h1>
+                    <!-- <PrimerFormulario /> -->
+                    <RegistroFormulario />
+                </div>
+            </div>
+        </div>
     </main>
 </template>
 
-<style scoped></style>
+<style scoped lang="scss">
+main {
+    background-color: #fafafa;
+}
+</style>
